@@ -1,11 +1,12 @@
 //Parameters to the genetic algorithm
-final static int POPULATION_SIZE_INITIAL = 50;
-final static float PROB_MUTATE = 0.2;
-final static int POPULATION_SIZE_MAX = 200;
+final static int POPULATION_SIZE_INITIAL = 40;
+final static float PROB_MUTATE = 0.4;
+final static int POPULATION_SIZE_MAX = 100;
+final static int BREED_NUM = 5;
 
 //Variables used for storing the goal image
 PImage goalImage;
-String imagefilename = "fallcolors_ra_hurd_flickr.jpg";
+String imagefilename = "santacruz_elrentaplats_flickr.jpg";
 color[] goalPixels;
 
 //Variables used in evolution
@@ -36,9 +37,9 @@ void setup()
                                        
   //initialize our first population
   population = new ArrayList();
-  for (int i = 0; i < POPULATION_SIZE_INITIAL; i++) {
+  for (int i = 0; i < POPULATION_SIZE_INITIAL; i++)
     population.add(new Candidate(goalPixels, true));
-  }
+
   currentGeneration = 0;  
 }
 
@@ -68,32 +69,51 @@ void draw()
    *    - sorting the population by fitness
    *    - evolving a new population
    */
-  // TODO : write this
+  // Evolve! Let Darwin's theories wreck their havoc
+  naturalSelection(); // Done first while list is properly sorted
   mutateCandidates();
   breedCandidates();
-  naturalSelection();
   
   //Increment the generation number
   currentGeneration++;
   
-//  noLoop();
-}
-
-void mutateCandidates() {
-  // TODO
-}
-
-void breedCandidates() {
-  // TODO
+  //noLoop();
 }
 
 void naturalSelection() {
-  // TODO
+  // Kill all but first POPULATION_SIZE_MAX candidates
+  // TODO simplify this if possible
+  ArrayList newPopulation = new ArrayList();
+  int newPopulationSize = min(POPULATION_SIZE_MAX, population.size());
+  for (int i = 0; i < newPopulationSize; i++)
+    newPopulation.add(population.get(i));
+  this.population = newPopulation;
 }
 
-void addBaby(Candidate a, Candidate b) {
-  Candidate child = a.crossover(b);
-  population.add(child);
+void mutateCandidates() {
+  // Mutate each candidate with a PROB_MUTATE chance
+  for (int i = 0; i < population.size(); i++)
+    if (random(0, 1) < PROB_MUTATE) {
+      // Add a mutant
+      Candidate parent = (Candidate)population.get(i);
+      Candidate mutation = parent.mutate();
+      population.add(mutation);
+//      Candidate mutant = (Candidate)population.get(i);
+//      mutant.mutate();
+    }
+}
+
+void breedCandidates() {
+  // Just like in real life, the best BREED_NUM candidates find mates
+  // In this case, they are polygamous and each of the best candidates mate in a round-robin
+  for (int i = 0; i < BREED_NUM; i++)
+    for (int j = i + 1; j < BREED_NUM; j++) {
+      // Add a baby
+      Candidate mother = (Candidate)population.get(i);
+      Candidate father = (Candidate)population.get(j);
+      Candidate child = mother.crossover(father);
+      population.add(child);
+    }
 }
 
 //helper function that extracts the red value from a color (on [0, 255])

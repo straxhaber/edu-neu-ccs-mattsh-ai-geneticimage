@@ -1,13 +1,18 @@
 public class Candidate implements Comparable {
   
-  //the total number of shapes that make up the representation
-  public static final int NUM_SHAPES_PER_CANDIDATE = 250;
+  // the total number of shapes that make up the representation
+  public static final int NUM_SHAPES_INITIAL = 250;
+  
+  // chance an individual circle will mutate when mutating
+  public static final float PROB_MUTATE = 0.2;
+  
+  private static final int NUM_MUTATE = 5;
   
   // Reference to the target this candidate is trying to approximate
   private color[] target;
   
   //the array of shapes that makes up the candidate representation
-  public Circle[] shapes;
+  public ArrayList shapes;
   
   //the background color (held constant here, could change as part of evolution if you want)
   public int backgroundColor = 128;
@@ -19,60 +24,75 @@ public class Candidate implements Comparable {
   //create a candidate made up of random circles
   public Candidate(color[] target, boolean genShapesP) {
     this.target = target;
-    this.shapes = new Circle[NUM_SHAPES_PER_CANDIDATE];
+    this.shapes = new ArrayList();
     
     this.fitnessStale = true;
     this.fitness = 0.0f;
     
     if (genShapesP) {
-      for (int i = 0; i < NUM_SHAPES_PER_CANDIDATE; i++) {
+      for (int i = 0; i < NUM_SHAPES_INITIAL; i++) {
         Circle c = new Circle(null);
         c.setToRandom();
-        this.shapes[i] = c;
+        this.shapes.add(c);
       }
     }
   }
 
-  public Candidate(color[] target, Circle[] circles) {
+  public Candidate(color[] target, ArrayList circles) {
     this(target, false);
     this.shapes = circles;
   }
   
   public Candidate mutate() {
-    Circle[] newShapes = new Circle[NUM_SHAPES_PER_CANDIDATE];
+    return new Candidate(this.target, true);
+
+//    // Add NUM_MUTATE circles to this Candidate
+//    Circle newC; // Place-holder for circles being looped through
+//    for (int i = 0; i < NUM_MUTATE; i++) {
+//      newC = new Circle(null);
+//      newC.setToRandom();
+//      this.shapes.add(newC);
+//    }
     
-    for (int i = 0; i < this.shapes.length; i++) {
-      newShapes[i] = new Circle(this.shapes[i]);
-    }
+//    Circle[] newShapes = new ArrayList();
+//    for (int i = 0; i < this.shapes.size(); i++) {
+//      Circle newC;
+//      if (random(0, 1) < PROB_MUTATE) {
+//        newC = new Circle(null);
+//        newC.setToRandom();
+//        
+//      } else {
+//        newC = new Circle(this.shapes.get(i));
+//      }
+//      newShapes.add(newC);
+//    }
     
-    Candidate newC = new Candidate(this.target, newShapes);
-    return newC;  //TODO: write me!
+//    Candidate newC = new Candidate(this.target, newShapes);
+//    return newC;  //TODO: write me!
   }
   
   // Modified to compute crossover as half-alpha composite of self and other
   public Candidate crossover(Candidate other) {
-    int numCircles = shapes.length + other.shapes.length;
-    Circle[] allCircles = new Circle[numCircles];
+    // Add all circles to a new ArrayList with each having its visibility halved
+    ArrayList allCircles = new ArrayList();
+    addCirclesHalfVisibility(allCircles, this.shapes); // Add half-alpha copies of self
+    addCirclesHalfVisibility(allCircles, other.shapes); // Add half-alpha copies of self
     
-    Circle c; // Placeholder for circles being added to new candidate
-    
-    // Add half-alpha copies of self
-    for (int i = 0; i < this.shapes.length; i++) {
-      c = new Circle(this.shapes[i]);
-      c.halveVisibility();
-      allCircles[i] = c;
-    }
-
-    // Add half-alpha copies of 'other'
-    for (int i = 0; i < other.shapes.length; i++) {
-      c = new Circle(other.shapes[i]);
-      c.halveVisibility();
-      allCircles[this.shapes.length + i] = c;
-    }
-
     return new Candidate(this.target, allCircles);
     
     // TODO: Consider using blend()
+  }
+  
+  public void addCirclesHalfVisibility(ArrayList target, ArrayList source) {
+    Circle oldC; // Placeholder for circles being looped through
+    Circle newC; // Placeholder for circles being generated
+    
+    for (int i = 0; i < source.size(); i++) {
+      oldC = (Circle)source.get(i);
+      newC = new Circle(oldC);
+      newC.halveVisibility();
+      target.add(newC);
+    }
   }
   
   // Modified to include target and fitness function
@@ -114,7 +134,7 @@ public class Candidate implements Comparable {
   public color[] getCandidatePixels() {
     PGraphics buffer = createGraphics(width, height);
     buffer.beginDraw();
-    render(buffer);
+    this.render(buffer);
     buffer.endDraw();    
     buffer.loadPixels(); 
     return buffer.pixels; 
@@ -127,13 +147,16 @@ public class Candidate implements Comparable {
     else
       buffer.background(this.backgroundColor);
     
-    for (int i = 0; i < NUM_SHAPES_PER_CANDIDATE; i++)
-      this.shapes[i].render(buffer);
+    Circle c; // Place-holder for circles being looped through
+    for (int i = 0; i < this.shapes.size(); i++) {
+      c = (Circle)this.shapes.get(i);
+      c.render(buffer);
+    }
   }
   
   //compareTo makes it so that Candidates can be sorted based on fitness using Array.sort()
   public int compareTo(Object o) {
-    Candidate other = (Candidate) o;
+    Candidate other = (Candidate)o;
     
     float myFitness = this.getFitness();
     float otherFitness = other.getFitness();
