@@ -1,6 +1,7 @@
 //Parameters to the genetic algorithm
-final static int POPULATION_SIZE = 50;
+final static int POPULATION_SIZE_INITIAL = 50;
 final static float PROB_MUTATE = 0.2;
+final static int POPULATION_SIZE_MAX = 200;
 
 //Variables used for storing the goal image
 PImage goalImage;
@@ -35,7 +36,7 @@ void setup()
                                        
   //initialize our first population
   population = new ArrayList();
-  for (int i = 0; i < POPULATION_SIZE; i++) {
+  for (int i = 0; i < POPULATION_SIZE_INITIAL; i++) {
     population.add(new Candidate(goalPixels, true));
   }
   currentGeneration = 0;  
@@ -56,8 +57,8 @@ void draw()
   // Sort the candidates in order of their success
   Collections.sort(population);
   
-  //Render the first candidate in our population to the screen 
-  //Passing null means we are not asking it to render to an off-screen frame buffer
+  // Render the best candidate in our population to the screen
+  // Passing null means we are not asking it to render to an off-screen frame buffer 
   Candidate bestCandidate = (Candidate)population.get(0);
   bestCandidate.render(null);
   
@@ -67,12 +68,32 @@ void draw()
    *    - sorting the population by fitness
    *    - evolving a new population
    */
-// TODO : write this
+  // TODO : write this
+  mutateCandidates();
+  breedCandidates();
+  naturalSelection();
   
   //Increment the generation number
   currentGeneration++;
   
-  noLoop();
+//  noLoop();
+}
+
+void mutateCandidates() {
+  // TODO
+}
+
+void breedCandidates() {
+  // TODO
+}
+
+void naturalSelection() {
+  // TODO
+}
+
+void addBaby(Candidate a, Candidate b) {
+  Candidate child = a.crossover(b);
+  population.add(child);
 }
 
 //helper function that extracts the red value from a color (on [0, 255])
