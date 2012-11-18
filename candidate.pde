@@ -1,8 +1,5 @@
 public class Candidate implements Comparable {
   
-  // the total number of shapes that make up the representation
-  public static final int NUM_SHAPES_INITIAL = 250;
-  
   // chance an individual circle will mutate when mutating
   public static final float PROB_MUTATE = 0.2;
   
@@ -11,104 +8,95 @@ public class Candidate implements Comparable {
   // Reference to the target this candidate is trying to approximate
   private color[] target;
   
-  //the array of shapes that makes up the candidate representation
-  public List<Circle> shapes;
-  
-  //the background color (held constant here, could change as part of evolution if you want)
-  public int backgroundColor = 128;
+  // Buffer for Candidate
+  private color[] pixelArray;
   
   // Cache of fitness
   private boolean fitnessStale;
   private float fitness;
   
-  //create a candidate made up of random circles
-  public Candidate(color[] target, boolean genShapesP) {
+  //the background color (held constant here, could change as part of evolution if you want)
+  public int backgroundColor = 128;
+  
+  //create a candidate made up of the specified pixels
+  public Candidate(color[] target, color[] newPixels) {
     this.target = target;
-    this.shapes = new ArrayList<Circle>();
-    
-    this.fitnessStale = true;
-    this.fitness = 0.0f;
-    
-    if (genShapesP) {
-      for (int i = 0; i < NUM_SHAPES_INITIAL; i++) {
-        Circle c = new Circle(null);
-        c.setToRandom();
-        this.shapes.add(c);
-      }
-    }
-  }
-
-  public Candidate(color[] target, List circles) {
-    this(target, false);
-    this.shapes = circles;
+    this.pixelArray = newPixels;
   }
   
-  public Candidate mutate() {
-    return new Candidate(this.target, true);
-
-//    // Add NUM_MUTATE circles to this Candidate
-//    Circle newC; // Place-holder for circles being looped through
-//    for (int i = 0; i < NUM_MUTATE; i++) {
-//      newC = new Circle(null);
-//      newC.setToRandom();
-//      this.shapes.add(newC);
-//    }
-    
-//    Circle[] newShapes = new ArrayList();
-//    for (int i = 0; i < this.shapes.size(); i++) {
-//      Circle newC;
-//      if (random(0, 1) < PROB_MUTATE) {
-//        newC = new Circle(null);
-//        newC.setToRandom();
-//        
-//      } else {
-//        newC = new Circle(this.shapes.get(i));
-//      }
-//      newShapes.add(newC);
-//    }
-    
-//    Candidate newC = new Candidate(this.target, newShapes);
-//    return newC;  //TODO: write me!
+  //create a candidate made up of random pixels
+  public Candidate(color[] target) {
+    this.target = target;
+    this.pixelArray = new color[width * height];
+    for (int i = 0; i < this.pixelArray.length; i++)
+      this.pixelArray[i] = this.getRandomColor();
+  }
+  
+  public void mutate() {
+    this.fitnessStale = true;
+    for (int i = 0; i < pixels.length; i++) {
+      if (random(0, 1) < PROB_MUTATE)
+        pixels[i] = this.getRandomColor();
+    }
   }
   
   // Modified to compute crossover as half-alpha composite of self and other
   public Candidate crossover(Candidate other) {
-    // Add all circles to a new ArrayList with each having its visibility halved
-    List allCircles = new ArrayList<Circle>();
-    addCirclesHalfVisibility(allCircles, this.shapes); // Add half-alpha copies of self
-    addCirclesHalfVisibility(allCircles, other.shapes); // Add half-alpha copies of self
+    color[] otherPixels = other.pixelArray;
+    int myPixelsLength = this.pixelArray.length;
     
-    return new Candidate(this.target, allCircles);
-    
-    // TODO: Consider using blend()
+    // It would be an error to crossover candidates with different size buffers
+    if (myPixelsLength == otherPixels.length) {
+      color[] newPixels = new color[myPixelsLength];
+      for (int i = 0; i < myPixelsLength; i++) {
+        color myP = this.pixelArray[i];
+        color otP = otherPixels[i];
+        newPixels[i] = this.getLinearMidpoint(myP, otP);
+      }
+      return new Candidate(this.target, newPixels);
+    } else {
+      println("ERROR: Unmatched pixel array size!!");
+      return null;
+    }
   }
   
-  public void addCirclesHalfVisibility(List target, List source) {
-    Circle oldC; // Placeholder for circles being looped through
-    Circle newC; // Placeholder for circles being generated
-    
-    for (int i = 0; i < source.size(); i++) {
-      oldC = (Circle)source.get(i);
-      newC = new Circle(oldC);
-      newC.halveVisibility();
-      target.add(newC);
-    }
+  // Calculates the linear midpoint of two colors, returning an average of them
+  private color getLinearMidpoint(color c1, color c2) {
+    int c1R = getRed(c1);
+    int c1G = getGreen(c1);
+    int c1B = getBlue(c1);
+    int c1A = getAlpha(c1);
+    int c2R = getRed(c2);
+    int c2G = getGreen(c2);
+    int c2B = getBlue(c2);
+    int c2A = getAlpha(c2);
+    int newR = (c1R + c2R) / 2;
+    int newG = (c1G + c2G) / 2;
+    int newB = (c1B + c2B) / 2;
+    int newA = (c1A + c2A) / 2;
+    return color(newR, newG, newB, newA);
+  }
+  
+  private color getRandomColor() {
+    return color(random(0, 255),
+                 random(0, 255),
+                 random(0, 255),
+                 random(0, 255));
   }
   
   // Modified to include target and fitness function
   public float getFitness() {
     if (this.fitnessStale) {
-      color[] myPixels = this.getCandidatePixels();
       int deviation = 0;
   
       // Add linear differences to deviation
-      for (int i = 0; i < (width * height); i++) {
-        color myP = myPixels[i];
-        color tgP = this.target[i];
+      for (int i = 0; i < this.pixelArray.length; i++) {
+        color selfP = this.pixelArray[i];
+        color goalP = this.target[i];
       
-        int dRed = abs(getRed(myP) - getRed(tgP));
-        int dGreen = abs(getGreen(myP) - getGreen(tgP));
-        int dBlue = abs(getBlue(myP) - getBlue(tgP));
+        int dRed = abs(getRed(selfP) - getRed(goalP));
+        int dGreen = abs(getGreen(selfP) - getGreen(goalP));
+        int dBlue = abs(getBlue(selfP) - getBlue(goalP));
       
         deviation += (dRed + dGreen + dBlue);
         /*
@@ -132,25 +120,27 @@ public class Candidate implements Comparable {
   //does this by rendering the candidate to a frame buffer
   //warning: this function is very slow! you should call it sparingly
   public color[] getCandidatePixels() {
-    PGraphics buffer = createGraphics(width, height);
-    buffer.beginDraw();
-    this.render(buffer);
-    buffer.endDraw();    
-    buffer.loadPixels(); 
-    return buffer.pixels; 
+    return this.pixelArray;
+//    PGraphics buffer = createGraphics(width, height);
+//    buffer.beginDraw();
+//    this.render(buffer);
+//    buffer.endDraw();    
+//    buffer.loadPixels(); 
+//    return buffer.pixels; 
   }
     
   //render the candidate to either a PGraphics buffer or to the main canvas (by passing in null)
   public void render(PGraphics buffer) {
-    if (buffer == null)
+    if (buffer == null) {
       background(this.backgroundColor);
-    else
+      loadPixels();
+      pixels = this.pixelArray;
+      updatePixels();
+    } else {
       buffer.background(this.backgroundColor);
-    
-    Circle c; // Place-holder for circles being looped through
-    for (int i = 0; i < this.shapes.size(); i++) {
-      c = this.shapes.get(i);
-      c.render(buffer);
+      buffer.loadPixels();
+      buffer.pixels = this.pixelArray;
+      updatePixels();
     }
   }
   

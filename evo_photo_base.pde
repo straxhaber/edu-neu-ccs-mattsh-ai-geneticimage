@@ -38,13 +38,9 @@ void setup() {
   // initialize our first population
   population = new ArrayList<Candidate>();
   for (int i = 0; i < POPULATION_SIZE_INITIAL; i++)
-    population.add(new Candidate(goalPixels, true));
+    population.add(new Candidate(goalPixels));
 
   currentGeneration = 0;  
-}
-
-Candidate[] sortPop(Candidate[] population) {
-  return population; // TODO: write this for real
 }
 
 //This function is called once per frame
@@ -88,12 +84,8 @@ void naturalSelection() {
 void mutateCandidates() {
   // Mutate each candidate with a PROB_MUTATE chance
   for (int i = 0; i < population.size(); i++)
-    if (random(0, 1) < MUTATE_PROB) {
-      // Add a mutant
-      Candidate parent = population.get(i);
-      Candidate mutation = parent.mutate();
-      population.add(mutation);
-    }
+    if (random(0, 1) < MUTATE_PROB)
+      population.get(i).mutate();
 }
 
 void breedCandidates() {
@@ -106,6 +98,11 @@ void breedCandidates() {
       Candidate father = population.get(j);
       population.add(mother.crossover(father));
     }
+}
+
+//helper function that extracts the alpha value from a color (on [0, 255])
+int getAlpha(color c) {
+  return c >> 24 & 0xFF;
 }
 
 //helper function that extracts the red value from a color (on [0, 255])
