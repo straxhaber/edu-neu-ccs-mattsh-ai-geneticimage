@@ -1,22 +1,22 @@
 //Parameters to the genetic algorithm
-final static int POPULATION_SIZE_INITIAL = 40;
-final static float PROB_MUTATE = 0.4;
-final static int POPULATION_SIZE_MAX = 100;
-final static int BREED_NUM = 5;
+final static int POPULATION_SIZE_INITIAL = 200;
+final static float MUTATE_PROB = 0.4;
+final static int BREEDING_PRIMARY = 2;
+final static int BREEDING_SECONDARY = 5;
+final static int NATSELECT_N = 10;
 
 //Variables used for storing the goal image
 PImage goalImage;
-String imagefilename = "santacruz_elrentaplats_flickr.jpg";
+String imagefilename = "fallcolors_ra_hurd_flickr.jpg";
 color[] goalPixels;
 
 //Variables used in evolution
-ArrayList population; // List of Candidate objects
+List<Candidate> population; // List of Candidate objects
 int currentGeneration;
 
 //This function is called once, at the beginning of the program, and sets up the environment
 //we will be working in.
-void setup()
-{
+void setup() {
   //load the goal image as a PImage
   goalImage = loadImage(imagefilename);  
   
@@ -35,8 +35,8 @@ void setup()
   //width and height can be used to refer to the size of the canvas
   size(goalImage.width, goalImage.height);  
                                        
-  //initialize our first population
-  population = new ArrayList();
+  // initialize our first population
+  population = new ArrayList<Candidate>();
   for (int i = 0; i < POPULATION_SIZE_INITIAL; i++)
     population.add(new Candidate(goalPixels, true));
 
@@ -50,18 +50,19 @@ Candidate[] sortPop(Candidate[] population) {
 //This function is called once per frame
 //It will drive our evolution -- on each frame, it will evolve the next population
 //and render the best-matching candidate
-void draw()
-{
+void draw() {
   //Print out what generation we are currently on
   println("Generation: " + currentGeneration);
   
-  // Sort the candidates in order of their success
+  // Sort the candidates in order of their fitness
   Collections.sort(population);
   
+  // Prune all but the best candidates
+  naturalSelection(); // Done first while list is properly sorted
+  
+  // Passing null means we are not asking it to render to an off-screen frame buffer
   // Render the best candidate in our population to the screen
-  // Passing null means we are not asking it to render to an off-screen frame buffer 
-  Candidate bestCandidate = (Candidate)population.get(0);
-  bestCandidate.render(null);
+  population.get(0).render(null);
   
   /*
    * This is where you will put in the code that drives the evolutionary algorithm:
@@ -70,7 +71,6 @@ void draw()
    *    - evolving a new population
    */
   // Evolve! Let Darwin's theories wreck their havoc
-  naturalSelection(); // Done first while list is properly sorted
   mutateCandidates();
   breedCandidates();
   
@@ -81,38 +81,30 @@ void draw()
 }
 
 void naturalSelection() {
-  // Kill all but first POPULATION_SIZE_MAX candidates
-  // TODO simplify this if possible
-  ArrayList newPopulation = new ArrayList();
-  int newPopulationSize = min(POPULATION_SIZE_MAX, population.size());
-  for (int i = 0; i < newPopulationSize; i++)
-    newPopulation.add(population.get(i));
-  this.population = newPopulation;
+  // Kill all but first NATSELECT_N candidates
+  population = population.subList(0, NATSELECT_N);
 }
 
 void mutateCandidates() {
   // Mutate each candidate with a PROB_MUTATE chance
   for (int i = 0; i < population.size(); i++)
-    if (random(0, 1) < PROB_MUTATE) {
+    if (random(0, 1) < MUTATE_PROB) {
       // Add a mutant
-      Candidate parent = (Candidate)population.get(i);
+      Candidate parent = population.get(i);
       Candidate mutation = parent.mutate();
       population.add(mutation);
-//      Candidate mutant = (Candidate)population.get(i);
-//      mutant.mutate();
     }
 }
 
 void breedCandidates() {
   // Just like in real life, the best BREED_NUM candidates find mates
   // In this case, they are polygamous and each of the best candidates mate in a round-robin
-  for (int i = 0; i < BREED_NUM; i++)
-    for (int j = i + 1; j < BREED_NUM; j++) {
+  for (int i = 0; i < BREEDING_PRIMARY; i++)
+    for (int j = i + 1; j < BREEDING_SECONDARY; j++) {
       // Add a baby
-      Candidate mother = (Candidate)population.get(i);
-      Candidate father = (Candidate)population.get(j);
-      Candidate child = mother.crossover(father);
-      population.add(child);
+      Candidate mother = population.get(i);
+      Candidate father = population.get(j);
+      population.add(mother.crossover(father));
     }
 }
 

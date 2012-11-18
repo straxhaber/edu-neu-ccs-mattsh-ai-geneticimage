@@ -12,7 +12,7 @@ public class Candidate implements Comparable {
   private color[] target;
   
   //the array of shapes that makes up the candidate representation
-  public ArrayList shapes;
+  public List<Circle> shapes;
   
   //the background color (held constant here, could change as part of evolution if you want)
   public int backgroundColor = 128;
@@ -24,7 +24,7 @@ public class Candidate implements Comparable {
   //create a candidate made up of random circles
   public Candidate(color[] target, boolean genShapesP) {
     this.target = target;
-    this.shapes = new ArrayList();
+    this.shapes = new ArrayList<Circle>();
     
     this.fitnessStale = true;
     this.fitness = 0.0f;
@@ -38,7 +38,7 @@ public class Candidate implements Comparable {
     }
   }
 
-  public Candidate(color[] target, ArrayList circles) {
+  public Candidate(color[] target, List circles) {
     this(target, false);
     this.shapes = circles;
   }
@@ -74,7 +74,7 @@ public class Candidate implements Comparable {
   // Modified to compute crossover as half-alpha composite of self and other
   public Candidate crossover(Candidate other) {
     // Add all circles to a new ArrayList with each having its visibility halved
-    ArrayList allCircles = new ArrayList();
+    List allCircles = new ArrayList<Circle>();
     addCirclesHalfVisibility(allCircles, this.shapes); // Add half-alpha copies of self
     addCirclesHalfVisibility(allCircles, other.shapes); // Add half-alpha copies of self
     
@@ -83,7 +83,7 @@ public class Candidate implements Comparable {
     // TODO: Consider using blend()
   }
   
-  public void addCirclesHalfVisibility(ArrayList target, ArrayList source) {
+  public void addCirclesHalfVisibility(List target, List source) {
     Circle oldC; // Placeholder for circles being looped through
     Circle newC; // Placeholder for circles being generated
     
@@ -149,7 +149,7 @@ public class Candidate implements Comparable {
     
     Circle c; // Place-holder for circles being looped through
     for (int i = 0; i < this.shapes.size(); i++) {
-      c = (Circle)this.shapes.get(i);
+      c = this.shapes.get(i);
       c.render(buffer);
     }
   }
