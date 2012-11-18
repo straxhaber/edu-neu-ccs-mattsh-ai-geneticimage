@@ -1,15 +1,46 @@
-static class Circle {
+class Circle {
   public int radius;      //radius of the circle
   public int xPos, yPos;  //center point of the circle
   public int r, g, b, a;  //red, green, blue, and alpha values
   public int smallestRadius;
   public int largestRadius;
   
-  //constructor that creates a random circle!
-  private Circle(int xPos, int yPos, int radius, int r, int g, int b, int a) {
+  /*
+    constructor that creates either a copy or an incomplete circle
+    
+    NOTE: Must either:
+      - run a setTo method before use
+      - provide a circle to copy (not null)
+      - run a more thorough constructor that fills in all fields
+      
+      I am doing this because I couldn't figure out how to make a static
+        factory method in Processing. This cleaned up the other code while
+        allowing me to make 'children' without 'killing' parents
+  */
+  public Circle(Circle c) {
     this.smallestRadius = 2;
     this.largestRadius = width / 4;
-    
+
+    if (c != null) {
+      this.xPos = c.xPos;
+      this.yPos = c.yPos;
+      this.radius = c.radius;
+      this.r = c.r;
+      this.g = c.g;
+      this.b = c.b;
+      this.a = c.a;
+    }
+  }
+
+  public void setToRandom() {
+    xPos = int(random(0, width));  //xPos should be somewhere within the canvas size
+    yPos = int(random(0, height)); //yPos should be somewhere within the canvas size
+    radius = int(random(smallestRadius, largestRadius));  //randomly sized radius
+    r = int(random(0, 255));       //random red value
+    g = int(random(0, 255));       //random green value
+    b = int(random(0, 255));       //random blue value
+    a = 128;                       //circles should be semi-transparent
+
     this.xPos = xPos;
     this.yPos = yPos;
     this.radius = radius;
@@ -19,25 +50,8 @@ static class Circle {
     this.a = a;
   }
   
-  public static Circle getRandomCircle() {
-    return new Circle(int(random(0, width)),  //xPos should be somewhere within the canvas size
-                      int(random(0, height)), //yPos should be somewhere within the canvas size
-                      int(random(smallestRadius, largestRadius)),  //randomly sized radius
-                      int(random(0, 255)),    //random red value
-                      int(random(0, 255)),    //random green value
-                      int(random(0, 255)),    //random blue value
-                      128);                   //circles should be semi-transparent
-  }
-  
-  //copy constructor
-  public static Circle getCircleCopy(Circle c) {
-    return new Circle(c.xPos, c.yPos, c.radius, c.r, c.g, c.b, c.a);
-  }
-  
-  public Circle getHalfAlphaCopy() {
-    Circle newC = Circle.getCircleCopy(this);
-    newC.a = this.a / 2; // TODO: should this be * 2?
-    return newC;
+  public void halveVisibility() {
+    this.a = this.a / 2; // TODO: should this be * 2?
   }
 	
   //render the circle to either a PGraphics buffer or to the screen (by passing in null)
