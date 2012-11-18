@@ -1,8 +1,6 @@
 //Parameters to the genetic algorithm
 final static int POPULATION_SIZE = 50;
-final static float PERCENTAGE_KEEP = 0.1;
-final static float PROBABILITY_KEEP = 0.3;
-final static float PERCENTAGE_MUTATE = 0.2;
+final static float PROB_MUTATE = 0.2;
 
 //Variables used for storing the goal image
 PImage goalImage;
@@ -10,7 +8,7 @@ String imagefilename = "fallcolors_ra_hurd_flickr.jpg";
 color[] goalPixels;
 
 //Variables used in evolution
-Candidate[] population;
+ArrayList population; // List of Candidate objects
 int currentGeneration;
 
 //This function is called once, at the beginning of the program, and sets up the environment
@@ -36,9 +34,9 @@ void setup()
   size(goalImage.width, goalImage.height);  
                                        
   //initialize our first population
-  population = new Candidate[POPULATION_SIZE];
+  population = new ArrayList();
   for (int i = 0; i < POPULATION_SIZE; i++) {
-    population[i] = new Candidate(goalPixels);
+    population.add(new Candidate(goalPixels, true));
   }
   currentGeneration = 0;  
 }
@@ -55,11 +53,13 @@ void draw()
   //Print out what generation we are currently on
   println("Generation: " + currentGeneration);
   
-  population = sortPop(population);
+  // Sort the candidates in order of their success
+  Collections.sort(population);
   
   //Render the first candidate in our population to the screen 
   //Passing null means we are not asking it to render to an off-screen frame buffer
-  population[0].render(null);
+  Candidate bestCandidate = (Candidate)population.get(0);
+  bestCandidate.render(null);
   
   /*
    * This is where you will put in the code that drives the evolutionary algorithm:

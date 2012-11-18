@@ -17,28 +17,36 @@ public class Candidate implements Comparable {
   private float fitness;
   
   //create a candidate made up of random circles
-  public Candidate(color[] target) {
+  public Candidate(color[] target, boolean genShapesP) {
     this.target = target;
     this.shapes = new Circle[NUM_SHAPES_PER_CANDIDATE];
     
     this.fitnessStale = true;
     this.fitness = 0.0f;
     
-    for (int i = 0; i < NUM_SHAPES_PER_CANDIDATE; i++) {
-      Circle c = new Circle(null);
-      c.setToRandom();
-      this.shapes[i] = c;
+    if (genShapesP) {
+      for (int i = 0; i < NUM_SHAPES_PER_CANDIDATE; i++) {
+        Circle c = new Circle(null);
+        c.setToRandom();
+        this.shapes[i] = c;
+      }
     }
   }
 
   public Candidate(color[] target, Circle[] circles) {
-    this(target);
+    this(target, false);
     this.shapes = circles;
   }
   
   public Candidate mutate() {
-    this.fitnessStale = true;
-    return this;  //TODO: write me!
+    Circle[] newShapes = new Circle[NUM_SHAPES_PER_CANDIDATE];
+    
+    for (int i = 0; i < this.shapes.length; i++) {
+      newShapes[i] = new Circle(this.shapes[i]);
+    }
+    
+    Candidate newC = new Candidate(this.target, newShapes);
+    return newC;  //TODO: write me!
   }
   
   // Modified to compute crossover as half-alpha composite of self and other
