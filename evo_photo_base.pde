@@ -61,6 +61,7 @@ void draw()
    *    - sorting the population by fitness
    *    - evolving a new population
    */
+// TODO : write this
   
   //Increment the generation number
   currentGeneration++;
