@@ -5,11 +5,13 @@ public class Candidate implements Comparable {
   
   private static final int NUM_MUTATE = 5;
   
+  private final color START_COLOR = color(127, 127, 127);
+  
   // Reference to the target this candidate is trying to approximate
   private color[] target;
   
   // Buffer for Candidate
-  private color[] pixelArray;
+  private PImage img;
   
   // Cache of fitness
   private boolean fitnessStale;
@@ -19,41 +21,53 @@ public class Candidate implements Comparable {
   public int backgroundColor = 128;
   
   //create a candidate made up of the specified pixels
-  public Candidate(color[] target, color[] newPixels) {
+  public Candidate(color[] target, PImage image) {
     this.target = target;
-    this.pixelArray = newPixels;
+    this.img = image;
   }
   
   //create a candidate made up of random pixels
   public Candidate(color[] target) {
     this.target = target;
-    this.pixelArray = new color[width * height];
-    for (int i = 0; i < this.pixelArray.length; i++)
-      this.pixelArray[i] = this.getRandomColor();
+    this.img = createImage(width, height, ARGB);
+    this.img.loadPixels();
+    for (int i = 0; i < this.img.pixels.length; i++)
+//      this.img.pixels[i] = this.getRandomColor();
+      this.img.pixels[i] = START_COLOR;
+    this.img.updatePixels();
   }
   
   public void mutate() {
     this.fitnessStale = true;
-    for (int i = 0; i < pixels.length; i++) {
+    
+    this.img.loadPixels();
+    for (int i = 0; i < this.img.pixels.length; i++)
       if (random(0, 1) < PROB_MUTATE)
-        pixels[i] = this.getRandomColor();
-    }
+        this.img.pixels[i] = this.getRandomColor();
+    this.img.updatePixels();
   }
   
   // Modified to compute crossover as half-alpha composite of self and other
   public Candidate crossover(Candidate other) {
-    color[] otherPixels = other.pixelArray;
-    int myPixelsLength = this.pixelArray.length;
+    this.img.loadPixels();
+    other.img.loadPixels();
     
     // It would be an error to crossover candidates with different size buffers
-    if (myPixelsLength == otherPixels.length) {
-      color[] newPixels = new color[myPixelsLength];
-      for (int i = 0; i < myPixelsLength; i++) {
-        color myP = this.pixelArray[i];
-        color otP = otherPixels[i];
-        newPixels[i] = this.getLinearMidpoint(myP, otP);
+    if (this.img.pixels.length == other.img.pixels.length) {
+      // Create a new image surface and init it
+      PImage newImg = createImage(width, height, ARGB);
+      newImg.loadPixels();
+      
+      // Build up the new image surface with pixels that are halfway between the parents'
+      for (int i = 0; i < this.img.pixels.length; i++) {
+        color myP = this.img.pixels[i];
+        color otP = other.img.pixels[i];
+        newImg.pixels[i] = this.getLinearMidpoint(myP, otP);
       }
-      return new Candidate(this.target, newPixels);
+      
+      // Commit the pixel changes to the new image and return back a candidate wrapping it
+      newImg.updatePixels();
+      return new Candidate(this.target, newImg);
     } else {
       println("ERROR: Unmatched pixel array size!!");
       return null;
@@ -89,9 +103,10 @@ public class Candidate implements Comparable {
     if (this.fitnessStale) {
       int deviation = 0;
   
+      this.img.loadPixels();
       // Add linear differences to deviation
-      for (int i = 0; i < this.pixelArray.length; i++) {
-        color selfP = this.pixelArray[i];
+      for (int i = 0; i < this.img.pixels.length; i++) {
+        color selfP = this.img.pixels[i];
         color goalP = this.target[i];
       
         int dRed = abs(getRed(selfP) - getRed(goalP));
@@ -116,33 +131,10 @@ public class Candidate implements Comparable {
     return this.fitness;
   }
   
-  //gets a single dimension array of colors referring to each pixel in the candidate
-  //does this by rendering the candidate to a frame buffer
-  //warning: this function is very slow! you should call it sparingly
-  public color[] getCandidatePixels() {
-    return this.pixelArray;
-//    PGraphics buffer = createGraphics(width, height);
-//    buffer.beginDraw();
-//    this.render(buffer);
-//    buffer.endDraw();    
-//    buffer.loadPixels(); 
-//    return buffer.pixels; 
-  }
-    
-  //render the candidate to either a PGraphics buffer or to the main canvas (by passing in null)
-  public void render(PGraphics buffer) {
-    if (buffer == null) {
-      background(this.backgroundColor);
-      loadPixels();
-      pixels = this.pixelArray;
-      updatePixels();
-    } else {
-      buffer.background(this.backgroundColor);
-      buffer.loadPixels();
-      buffer.pixels = this.pixelArray;
-      updatePixels();
-    }
-  }
+  /*
+    NOTE: I deleted getCandidatePixels and render, moving to this pixel-based mechanism because
+    the system is MUCH MUCH faster and allows for many more generations
+  */
   
   //compareTo makes it so that Candidates can be sorted based on fitness using Array.sort()
   public int compareTo(Object o) {

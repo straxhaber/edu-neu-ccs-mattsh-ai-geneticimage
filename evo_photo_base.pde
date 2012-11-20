@@ -1,9 +1,9 @@
 //Parameters to the genetic algorithm
 final static int POPULATION_SIZE_INITIAL = 200;
-final static float MUTATE_PROB = 0.4;
-final static int BREEDING_PRIMARY = 2;
-final static int BREEDING_SECONDARY = 5;
-final static int NATSELECT_N = 10;
+final static float MUTATE_PROB = 0.1;
+final static int BREEDING_PRIMARY = 5;
+final static int BREEDING_SECONDARY = 10;
+final static int NATSELECT_N = 30;
 
 //Variables used for storing the goal image
 PImage goalImage;
@@ -18,29 +18,29 @@ int currentGeneration;
 //we will be working in.
 void setup() {
   //load the goal image as a PImage
-  goalImage = loadImage(imagefilename);  
+  goalImage = loadImage(imagefilename);
   
   //resize the goal image to be 100 pixels wide, '0' as the second parameter
   //instructs it to resize the image proportionally
   //we want the image to be 100 pixels wide just to make it faster
   //the larger the goal image, the more expensive our fitness computation will be
   //(because we will have more pixels to compare)
-  goalImage.resize(100, 0); 
+  goalImage.resize(100, 0);
 
   //store the pixels in the goal image in goalPixels for use in calculating fitness
-  goalPixels = goalImage.pixels;  
+  goalPixels = goalImage.pixels;
                                          
   //set the size of the canvas to the size of the goal image
   //after we have set the size of the canvas, the global variables
   //width and height can be used to refer to the size of the canvas
-  size(goalImage.width, goalImage.height);  
+  size(goalImage.width, goalImage.height);
                                        
   // initialize our first population
   population = new ArrayList<Candidate>();
   for (int i = 0; i < POPULATION_SIZE_INITIAL; i++)
     population.add(new Candidate(goalPixels));
 
-  currentGeneration = 0;  
+  currentGeneration = 0;
 }
 
 //This function is called once per frame
@@ -58,7 +58,8 @@ void draw() {
   
   // Passing null means we are not asking it to render to an off-screen frame buffer
   // Render the best candidate in our population to the screen
-  population.get(0).render(null);
+  Candidate bestCandidate = population.get(0);
+  renderCandidate(bestCandidate);
   
   /*
    * This is where you will put in the code that drives the evolutionary algorithm:
@@ -98,6 +99,11 @@ void breedCandidates() {
       Candidate father = population.get(j);
       population.add(mother.crossover(father));
     }
+}
+
+void renderCandidate(Candidate c) {
+  PImage img = c.img;
+  image(img, 0, 0);
 }
 
 //helper function that extracts the alpha value from a color (on [0, 255])
