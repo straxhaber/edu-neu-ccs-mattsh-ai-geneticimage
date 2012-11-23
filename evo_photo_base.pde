@@ -33,7 +33,7 @@ void setup() {
   //set the size of the canvas to the size of the goal image
   //after we have set the size of the canvas, the global variables
   //width and height can be used to refer to the size of the canvas
-  size(goalImage.width, goalImage.height);
+  size(goalImage.width, goalImage.height, P2D);
                                        
   // initialize our first population
   population = new ArrayList<Candidate>();
@@ -47,34 +47,20 @@ void setup() {
 //It will drive our evolution -- on each frame, it will evolve the next population
 //and render the best-matching candidate
 void draw() {
-  //Print out what generation we are currently on
-  println("Generation: " + currentGeneration);
+  // Print out what generation we are currently on
+  println(String.format("Generation: %d\t(%d in population)", currentGeneration, population.size()));
   
-  // Sort the candidates in order of their fitness
-  Collections.sort(population);
+  // Prune all but the best candidates and render the best
+  Collections.sort(population); // naturalSelection and renderBest require a sorted population
+  naturalSelection();
+  renderBest();
   
-  // Prune all but the best candidates
-  naturalSelection(); // Done first while list is properly sorted
-  
-  // Passing null means we are not asking it to render to an off-screen frame buffer
-  // Render the best candidate in our population to the screen
-  Candidate bestCandidate = population.get(0);
-  renderCandidate(bestCandidate);
-  
-  /*
-   * This is where you will put in the code that drives the evolutionary algorithm:
-   *    - determining the fitness for each candidate 
-   *    - sorting the population by fitness
-   *    - evolving a new population
-   */
   // Evolve! Let Darwin's theories wreck their havoc
   mutateCandidates();
   breedCandidates();
   
-  //Increment the generation number
+  // Increment the generation number
   currentGeneration++;
-  
-  //noLoop();
 }
 
 void naturalSelection() {
@@ -101,9 +87,10 @@ void breedCandidates() {
     }
 }
 
-void renderCandidate(Candidate c) {
-  PImage img = c.img;
-  image(img, 0, 0);
+void renderBest() {
+  Candidate bestCandidate = population.get(0);
+  // Passing null means we are not asking it to render to an off-screen frame buffer
+  bestCandidate.render(null);
 }
 
 //helper function that extracts the alpha value from a color (on [0, 255])

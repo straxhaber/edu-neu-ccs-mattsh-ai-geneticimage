@@ -5,15 +5,17 @@ public class Candidate implements Comparable {
   
   private static final int NUM_MUTATE = 5;
   
+  private final int NUM_PIXELS = width * height;
+  
   private final color START_COLOR = color(127, 127, 127);
   
   // Reference to the target this candidate is trying to approximate
   private color[] target;
   
   // Buffer for Candidate
-  private PImage img;
+  private color[] pixelA;
   
-  // Cache of fitness
+  // Fitness should be accessed through getFitness() 
   private boolean fitnessStale;
   private float fitness;
   
@@ -21,57 +23,41 @@ public class Candidate implements Comparable {
   public int backgroundColor = 128;
   
   //create a candidate made up of the specified pixels
-  public Candidate(color[] target, PImage image) {
+  public Candidate(color[] target, color[] pixelA) {
     this.target = target;
-    this.img = image;
+    this.pixelA = pixelA;
   }
   
   //create a candidate made up of random pixels
   public Candidate(color[] target) {
     this.target = target;
-    this.img = createImage(width, height, ARGB);
-    this.img.loadPixels();
-    for (int i = 0; i < this.img.pixels.length; i++)
-//      this.img.pixels[i] = this.getRandomColor();
-      this.img.pixels[i] = START_COLOR;
-    this.img.updatePixels();
+    
+    this.pixelA = new color[NUM_PIXELS];
+    for (int i = 0; i < NUM_PIXELS; i++)
+      this.pixelA[i] = this.getRandomColor();
+//      this.pixelA[i] = START_COLOR;
   }
   
   public void mutate() {
     this.fitnessStale = true;
     
-    this.img.loadPixels();
-    for (int i = 0; i < this.img.pixels.length; i++)
+    for (int i = 0; i < NUM_PIXELS; i++)
       if (random(0, 1) < PROB_MUTATE)
-        this.img.pixels[i] = this.getRandomColor();
-    this.img.updatePixels();
+        this.pixelA[i] = this.getRandomColor();
   }
   
   // Modified to compute crossover as half-alpha composite of self and other
   public Candidate crossover(Candidate other) {
-    this.img.loadPixels();
-    other.img.loadPixels();
-    
-    // It would be an error to crossover candidates with different size buffers
-    if (this.img.pixels.length == other.img.pixels.length) {
-      // Create a new image surface and init it
-      PImage newImg = createImage(width, height, ARGB);
-      newImg.loadPixels();
-      
-      // Build up the new image surface with pixels that are halfway between the parents'
-      for (int i = 0; i < this.img.pixels.length; i++) {
-        color myP = this.img.pixels[i];
-        color otP = other.img.pixels[i];
-        newImg.pixels[i] = this.getLinearMidpoint(myP, otP);
-      }
-      
-      // Commit the pixel changes to the new image and return back a candidate wrapping it
-      newImg.updatePixels();
-      return new Candidate(this.target, newImg);
-    } else {
-      println("ERROR: Unmatched pixel array size!!");
-      return null;
+    // Build up the new image surface with pixels that are halfway between the parents'
+    color[] newPixelA = new color[NUM_PIXELS];
+    for (int i = 0; i < NUM_PIXELS; i++) {
+      color myP = this.pixelA[i];
+      color otP = other.pixelA[i];
+      newPixelA[i] = this.getLinearMidpoint(myP, otP);
     }
+    
+    // Return back a candidate wrapping the new pixel array
+    return new Candidate(this.target, newPixelA);
   }
   
   // Calculates the linear midpoint of two colors, returning an average of them
@@ -92,10 +78,11 @@ public class Candidate implements Comparable {
   }
   
   private color getRandomColor() {
-    return color(random(0, 255),
-                 random(0, 255),
-                 random(0, 255),
-                 random(0, 255));
+    int newR = (int)random(0, 255);
+    int newG = (int)random(0, 255);
+    int newB = (int)random(0, 255);
+    int newA = (int)random(0, 255);
+    return color(newR, newG, newB, newA);
   }
   
   // Modified to include target and fitness function
@@ -103,10 +90,9 @@ public class Candidate implements Comparable {
     if (this.fitnessStale) {
       int deviation = 0;
   
-      this.img.loadPixels();
       // Add linear differences to deviation
-      for (int i = 0; i < this.img.pixels.length; i++) {
-        color selfP = this.img.pixels[i];
+      for (int i = 0; i < NUM_PIXELS; i++) {
+        color selfP = this.pixelA[i];
         color goalP = this.target[i];
       
         int dRed = abs(getRed(selfP) - getRed(goalP));
@@ -121,7 +107,7 @@ public class Candidate implements Comparable {
       }
   
       // Compute average deviation
-      float avg_deviation = (deviation + 0.0) / (width * height);
+      float avg_deviation = (deviation + 0.0) / NUM_PIXELS;
       
       // Cache the result
       this.fitness = avg_deviation;
@@ -129,6 +115,19 @@ public class Candidate implements Comparable {
     }
     
     return this.fitness;
+  }
+  
+  public void render(PGraphics buffer) {
+    PImage img = createImage(width, height, RGB);
+    
+    img.loadPixels();
+    img.pixels = this.pixelA;
+    img.updatePixels();
+    
+    if (buffer == null)
+      image(img, 0, 0);
+    else
+      buffer.image(img, 0, 0);
   }
   
   /*
@@ -143,7 +142,9 @@ public class Candidate implements Comparable {
     float myFitness = this.getFitness();
     float otherFitness = other.getFitness();
     
-    if (abs(otherFitness - myFitness) < 0.001)
+//    if (abs(otherFitness - myFitness) < 0.0001)
+//      return 0;
+    if (otherFitness == myFitness)
       return 0;
     else if (otherFitness > myFitness)
       return -1;
