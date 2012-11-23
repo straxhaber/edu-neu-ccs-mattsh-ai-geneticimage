@@ -1,16 +1,16 @@
 //Parameters to the genetic algorithm
-final static int POPULATION_SIZE_INITIAL = 200;
+final static int POPULATION_SIZE_INITIAL = 1000;
 
 final static double SURVIVAL_RATE_MIN = 0.2;
 final static double SURVIVAL_RATE_MAX = 0.8;
 final static double SURVIVAL_MUTATE_PROB = 0.1;
 
-final static int SURVIVAL_MAX_POPULATION = 255;
+final static int SURVIVAL_MAX_POPULATION = 200;
 
 final static int BREEDING_NUMGUARANTEED_ALPHA = 5;
 final static int BREEDING_NUMGUARANTEED_BETA = 10;
 
-final static double BREED_CHANCE_MIN = 0.0001;
+final static double BREED_CHANCE_MIN = 0.00001;
 final static double BREED_CHANCE_MAX = 0.2;
 
 // Variables used for storing the goal image
@@ -101,7 +101,8 @@ void survivalOfTheFittest(List<Candidate> newGeneration) {
 
 void thereAintEnoughRoomForTheManyOfUs() {
   // Kill all but first SURVIVAL_MAX_POPULATION candidates
-  population = population.subList(0, SURVIVAL_MAX_POPULATION);
+  int maxPop = min(SURVIVAL_MAX_POPULATION, population.size());
+  population = population.subList(0, maxPop);
 }
 
 double getDistributionValue(double pMin, double pMax, int numIntervals, int interval) {
