@@ -5,10 +5,13 @@ final static double SURVIVAL_RATE_MIN = 0.2;
 final static double SURVIVAL_RATE_MAX = 0.8;
 final static double SURVIVAL_MUTATE_PROB = 0.1;
 
-final static int BREEDING_NUM_ALPHA = 5;
-final static int BREEDING_NUM_BETA = 10;
-//final static double BREED_CHANCE_MIN = 0.0001;
-//final static double BREED_CHANCE_MAX = 0.2;
+final static int SURVIVAL_MAX_POPULATION = 255;
+
+final static int BREEDING_NUMGUARANTEED_ALPHA = 5;
+final static int BREEDING_NUMGUARANTEED_BETA = 10;
+
+final static double BREED_CHANCE_MIN = 0.0001;
+final static double BREED_CHANCE_MAX = 0.2;
 
 //Variables used for storing the goal image
 PImage goalImage;
@@ -62,6 +65,8 @@ void draw() {
   List<Candidate> newGeneration = evolve();
   population = newGeneration;
   
+  thereAintEnoughRoomForTheManyOfUs();
+  
   // Increment the generation number
   currentGeneration++;
 }
@@ -94,6 +99,11 @@ void survivalOfTheFittest(List<Candidate> newGeneration) {
   }
 }
 
+void thereAintEnoughRoomForTheManyOfUs() {
+  // Kill all but first SURVIVAL_MAX_POPULATION candidates
+  population = population.subList(0, SURVIVAL_MAX_POPULATION);
+}
+
 double getDistributionValue(double pMin, double pMax, int numIntervals, int interval) {
   double buckets = (double)numIntervals;
   double val =   (  (  (buckets - interval - 1)
@@ -105,29 +115,35 @@ double getDistributionValue(double pMin, double pMax, int numIntervals, int inte
   return val;
 }
 
+void addABaby(List<Candidate> newGeneration, int alphaN, int betaN) {
+  Candidate alphaParent = population.get(alphaN);
+  Candidate betaParent = population.get(betaN);
+  Candidate baby = alphaParent.crossover(betaParent);
+  newGeneration.add(baby);
+}
+
 
 void reproductionOfTheSexiest(List<Candidate> newGeneration) {
   // Just like in animal reproduction, the best alphas mate with a wider number of betas
   // In this case, they are polygamous and hermaphroditic
   // Each of the fit candidates mate in a round-robin
-  for (int i = 0; i < BREEDING_NUM_ALPHA; i++)
-    for (int j = 0; j < BREEDING_NUM_BETA; j++) {
-      // Add a baby
-      Candidate alphaParent = population.get(i);
-      Candidate betaParent = population.get(j);
-      Candidate baby = alphaParent.crossover(betaParent);
-      newGeneration.add(baby);
+  
+  // Guarantee that the sexiest reproduce
+  for (int i = 0; i < BREEDING_NUMGUARANTEED_ALPHA; i++)
+    for (int j = 0; j < BREEDING_NUMGUARANTEED_BETA; j++) {
+      if (i != j)
+        addABaby(newGeneration, i, j); // Add a baby
     }
   
-//  for (int i = 0; i < numLiving; i++)
-//    for (int j = 0; j < numLiving; j++) {
-//      double alphaChance = getDistributionValue(BREED_CHANCE_MIN, BREED_CHANCE_MAX, numLiving, i);
-//      double betaChance = getDistributionValue(BREED_CHANCE_MIN, BREED_CHANCE_MAX, numLiving, j);
-//      if (random(0, 1) < (alphaChance * betaChance)) {
-//        Candidate baby = population.get(i).crossover(population.get(j));
-//        newGeneration.add(baby);
-//      }
-//    }
+  // Everyone else has a chance of reproduction
+  int numLiving = population.size();
+  for (int i = 0; i < numLiving; i++)
+    for (int j = 0; j < numLiving; j++) {
+      double alphaChance = getDistributionValue(BREED_CHANCE_MIN, BREED_CHANCE_MAX, numLiving, i);
+      double betaChance = getDistributionValue(BREED_CHANCE_MIN, BREED_CHANCE_MAX, numLiving, j);
+      if (random(0, 1) < (alphaChance * betaChance))
+        addABaby(newGeneration, i, j); // Add a baby
+    }
 }
 
 void renderBest() {
