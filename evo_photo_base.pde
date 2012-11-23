@@ -13,17 +13,17 @@ final static int BREEDING_NUMGUARANTEED_BETA = 10;
 final static double BREED_CHANCE_MIN = 0.0001;
 final static double BREED_CHANCE_MAX = 0.2;
 
-//Variables used for storing the goal image
+// Variables used for storing the goal image
 PImage goalImage;
 String imagefilename = "fallcolors_ra_hurd_flickr.jpg";
 color[] goalPixels;
 
-//Variables used in evolution
+// Variables used in evolution
 List<Candidate> population; // List of Candidate objects
 int currentGeneration;
 
-//This function is called once, at the beginning of the program, and sets up the environment
-//we will be working in.
+// This function is called once, at the beginning of the program, and sets up the environment
+// we will be working in.
 void setup() {
   //load the goal image as a PImage
   goalImage = loadImage(imagefilename);
