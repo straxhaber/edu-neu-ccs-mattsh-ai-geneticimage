@@ -1,9 +1,14 @@
 //Parameters to the genetic algorithm
 final static int POPULATION_SIZE_INITIAL = 200;
-final static float MUTATE_PROB = 0.1;
-final static int BREEDING_PRIMARY = 5;
-final static int BREEDING_SECONDARY = 10;
-final static int NATSELECT_N = 30;
+
+final static double SURVIVAL_RATE_MIN = 0.2;
+final static double SURVIVAL_RATE_MAX = 0.8;
+final static double SURVIVAL_MUTATE_PROB = 0.1;
+
+final static int BREEDING_NUM_ALPHA = 5;
+final static int BREEDING_NUM_BETA = 10;
+//final static double BREED_CHANCE_MIN = 0.0001;
+//final static double BREED_CHANCE_MAX = 0.2;
 
 //Variables used for storing the goal image
 PImage goalImage;
@@ -52,39 +57,77 @@ void draw() {
   
   // Prune all but the best candidates and render the best
   Collections.sort(population); // naturalSelection and renderBest require a sorted population
-  naturalSelection();
   renderBest();
   
-  // Evolve! Let Darwin's theories wreck their havoc
-  mutateCandidates();
-  breedCandidates();
+  List<Candidate> newGeneration = evolve();
+  population = newGeneration;
   
   // Increment the generation number
   currentGeneration++;
 }
 
-void naturalSelection() {
-  // Kill all but first NATSELECT_N candidates
-  population = population.subList(0, NATSELECT_N);
+List<Candidate> evolve() {
+  List<Candidate> newGeneration = new ArrayList<Candidate>();
+  
+  // Evolve! Let Darwin's theories wreck their havoc
+  reproductionOfTheSexiest(newGeneration);
+  survivalOfTheFittest(newGeneration);
+  
+  return newGeneration;
 }
 
-void mutateCandidates() {
-  // Mutate each candidate with a PROB_MUTATE chance
-  for (int i = 0; i < population.size(); i++)
-    if (random(0, 1) < MUTATE_PROB)
-      population.get(i).mutate();
-}
-
-void breedCandidates() {
-  // Just like in real life, the best BREED_NUM candidates find mates
-  // In this case, they are polygamous and each of the best candidates mate in a round-robin
-  for (int i = 0; i < BREEDING_PRIMARY; i++)
-    for (int j = i + 1; j < BREEDING_SECONDARY; j++) {
-      // Add a baby
-      Candidate mother = population.get(i);
-      Candidate father = population.get(j);
-      population.add(mother.crossover(father));
+void survivalOfTheFittest(List<Candidate> newGeneration) {
+  int numLiving = population.size();
+  
+  for (int i = 0; i < numLiving; i++) {
+    // Survival rates evenly distributed between 20% and 80%
+    double chanceOfSurvival = getDistributionValue(SURVIVAL_RATE_MIN, SURVIVAL_RATE_MAX, numLiving, i);
+    
+    if (random(0, 1) < chanceOfSurvival) {
+      Candidate newCandidate = population.get(i);
+      
+      if (random(0, 1) < SURVIVAL_MUTATE_PROB)
+        newCandidate.mutate();
+        
+      newGeneration.add(newCandidate);
     }
+  }
+}
+
+double getDistributionValue(double pMin, double pMax, int numIntervals, int interval) {
+  double buckets = (double)numIntervals;
+  double val =   (  (  (buckets - interval - 1)
+                     / (buckets - 1)
+                    )
+                  * (pMax - pMin)
+                 )
+               + pMin;
+  return val;
+}
+
+
+void reproductionOfTheSexiest(List<Candidate> newGeneration) {
+  // Just like in animal reproduction, the best alphas mate with a wider number of betas
+  // In this case, they are polygamous and hermaphroditic
+  // Each of the fit candidates mate in a round-robin
+  for (int i = 0; i < BREEDING_NUM_ALPHA; i++)
+    for (int j = 0; j < BREEDING_NUM_BETA; j++) {
+      // Add a baby
+      Candidate alphaParent = population.get(i);
+      Candidate betaParent = population.get(j);
+      Candidate baby = alphaParent.crossover(betaParent);
+      newGeneration.add(baby);
+    }
+  
+//  for (int i = 0; i < numLiving; i++)
+//    for (int j = 0; j < numLiving; j++) {
+//      double alphaChance = getDistributionValue(BREED_CHANCE_MIN, BREED_CHANCE_MAX, numLiving, i);
+//      double betaChance = getDistributionValue(BREED_CHANCE_MIN, BREED_CHANCE_MAX, numLiving, j);
+//      if (random(0, 1) < (alphaChance * betaChance)) {
+//        Candidate baby = population.get(i).crossover(population.get(j));
+//        newGeneration.add(baby);
+//      }
+//    }
 }
 
 void renderBest() {
