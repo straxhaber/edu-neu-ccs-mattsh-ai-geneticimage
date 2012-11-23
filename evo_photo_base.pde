@@ -1,13 +1,13 @@
 //Parameters to the genetic algorithm
-final static int POPULATION_SIZE_INITIAL = 1000;
+final static int POPULATION_SIZE_INITIAL = 100;
 
 final static double SURVIVAL_RATE_MIN = 0.2;
 final static double SURVIVAL_RATE_MAX = 0.8;
-final static double SURVIVAL_MUTATE_PROB = 0.1;
+final static double SURVIVAL_MUTATE_PROB = 0.5;
 
 final static int SURVIVAL_MAX_POPULATION = 200;
 
-final static int BREEDING_NUMGUARANTEED_ALPHA = 5;
+final static int BREEDING_NUMGUARANTEED_ALPHA = 7;
 final static int BREEDING_NUMGUARANTEED_BETA = 10;
 
 final static double BREED_CHANCE_MIN = 0.00001;
@@ -131,10 +131,9 @@ void reproductionOfTheSexiest(List<Candidate> newGeneration) {
   
   // Guarantee that the sexiest reproduce
   for (int i = 0; i < BREEDING_NUMGUARANTEED_ALPHA; i++)
-    for (int j = 0; j < BREEDING_NUMGUARANTEED_BETA; j++) {
+    for (int j = 0; j < BREEDING_NUMGUARANTEED_BETA; j++)
       if (i != j)
         addABaby(newGeneration, i, j); // Add a baby
-    }
   
   // Everyone else has a chance of reproduction
   int numLiving = population.size();

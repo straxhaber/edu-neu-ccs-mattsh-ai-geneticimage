@@ -1,13 +1,13 @@
 public class Candidate implements Comparable {
   
-  // chance an individual circle will mutate when mutating
+  // chance an individual pixel will mutate when mutating
   public static final float PROB_MUTATE = 0.2;
   
   private static final int NUM_MUTATE = 5;
   
   private final int NUM_PIXELS = width * height;
   
-  private final color START_COLOR = color(127, 127, 127);
+  private final color START_COLOR = color(255, 255, 255);
   
   // Reference to the target this candidate is trying to approximate
   private color[] target;
@@ -18,9 +18,6 @@ public class Candidate implements Comparable {
   // Fitness should be accessed through getFitness() 
   private boolean fitnessStale;
   private float fitness;
-  
-  //the background color (held constant here, could change as part of evolution if you want)
-  public int backgroundColor = 128;
   
   //create a candidate made up of the specified pixels
   public Candidate(color[] target, color[] pixelA) {
@@ -41,9 +38,17 @@ public class Candidate implements Comparable {
   public void mutate() {
     this.fitnessStale = true;
     
-    for (int i = 0; i < NUM_PIXELS; i++)
-      if (random(0, 1) < PROB_MUTATE)
-        this.pixelA[i] = this.getRandomColor();
+    PGraphics pg = createGraphics(width, height, P2D);
+    this.render(pg);
+    
+    pg.beginDraw();
+    Circle newC = new Circle(null);
+    newC.setToRandom();
+    newC.render(pg);
+    pg.endDraw();
+    
+    pg.loadPixels();
+    this.pixelA = pg.pixels;
   }
   
   // Modified to compute crossover as half-alpha composite of self and other
@@ -130,6 +135,12 @@ public class Candidate implements Comparable {
       buffer.image(img, 0, 0);
   }
   
+  // Update pixel store with contents of PGraphics
+  private void becomeGraphics(PGraphics buffer) {
+    buffer.loadPixels();
+    this.pixelA = buffer.pixels;
+  }
+  
   /*
     NOTE: I deleted getCandidatePixels and render, moving to this pixel-based mechanism because
     the system is MUCH MUCH faster and allows for many more generations
@@ -138,18 +149,8 @@ public class Candidate implements Comparable {
   //compareTo makes it so that Candidates can be sorted based on fitness using Array.sort()
   public int compareTo(Object o) {
     Candidate other = (Candidate)o;
-    
     float myFitness = this.getFitness();
     float otherFitness = other.getFitness();
-    
-//    if (abs(otherFitness - myFitness) < 0.0001)
-//      return 0;
-    if (otherFitness == myFitness)
-      return 0;
-    else if (otherFitness > myFitness)
-      return -1;
-    else
-      return 1;
+    return Double.compare(myFitness, otherFitness);
   }
-  
 }
