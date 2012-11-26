@@ -1,131 +1,126 @@
 public class Candidate implements Comparable {
   
   // the total number of shapes that make up the representation
-  public static final int NUM_SHAPES_INITIAL = 250;
-  
-  // chance an individual circle will mutate when mutating
-  public static final float PROB_MUTATE = 0.2;
-  
-  private static final int NUM_MUTATE = 5;
+  public static final int NUM_SHAPES = 250;
   
   // Reference to the target this candidate is trying to approximate
   private color[] target;
   
   //the array of shapes that makes up the candidate representation
-  public List<Circle> shapes;
+  public Circle[] shapes;
   
   //the background color (held constant here, could change as part of evolution if you want)
-  public int backgroundColor = 128;
+  public int backgroundColor = 127;
   
   // Cache of fitness
-  private boolean fitnessStale;
-  private float fitness;
+  private double fitness;
   
   //create a candidate made up of random circles
   public Candidate(color[] target, boolean genShapesP) {
     this.target = target;
-    this.shapes = new ArrayList<Circle>();
-    
-    this.fitnessStale = true;
-    this.fitness = 0.0f;
     
     if (genShapesP) {
-      for (int i = 0; i < NUM_SHAPES_INITIAL; i++) {
-        Circle c = new Circle(null);
-        c.setToRandom();
-        this.shapes.add(c);
+      // Build up shapes array
+      this.shapes = new Circle[NUM_SHAPES];
+      for (int i = 0; i < NUM_SHAPES; i++) {
+        this.shapes[i] = new Circle(null);
+        this.shapes[i].setToRandom();
       }
+      this.updateFitness();
     }
   }
 
-  public Candidate(color[] target, List circles) {
+  public Candidate(color[] target, Circle[] circles) {
     this(target, false);
     this.shapes = circles;
+    this.updateFitness();
   }
-  
-  public Candidate mutate() {
-    return new Candidate(this.target, true);
 
-//    // Add NUM_MUTATE circles to this Candidate
-//    Circle newC; // Place-holder for circles being looped through
-//    for (int i = 0; i < NUM_MUTATE; i++) {
-//      newC = new Circle(null);
-//      newC.setToRandom();
-//      this.shapes.add(newC);
-//    }
-    
-//    Circle[] newShapes = new ArrayList();
-//    for (int i = 0; i < this.shapes.size(); i++) {
-//      Circle newC;
-//      if (random(0, 1) < PROB_MUTATE) {
-//        newC = new Circle(null);
-//        newC.setToRandom();
-//        
-//      } else {
-//        newC = new Circle(this.shapes.get(i));
-//      }
-//      newShapes.add(newC);
-//    }
-    
-//    Candidate newC = new Candidate(this.target, newShapes);
-//    return newC;  //TODO: write me!
+  /**
+  Randomize a random circle in the candidate
+  */
+  public void mutate() {
+    this.getRandomElement(this.shapes).setToRandom();
+    this.updateFitness();
   }
   
-  // Modified to compute crossover as half-alpha composite of self and other
-  public Candidate crossover(Candidate other) {
-    // Add all circles to a new ArrayList with each having its visibility halved
-    List allCircles = new ArrayList<Circle>();
-    addCirclesHalfVisibility(allCircles, this.shapes); // Add half-alpha copies of self
-    addCirclesHalfVisibility(allCircles, other.shapes); // Add half-alpha copies of self
-    
-    return new Candidate(this.target, allCircles);
-    
-    // TODO: Consider using blend()
-  }
-  
-  public void addCirclesHalfVisibility(List target, List source) {
-    Circle oldC; // Placeholder for circles being looped through
-    Circle newC; // Placeholder for circles being generated
-    
-    for (int i = 0; i < source.size(); i++) {
-      oldC = (Circle)source.get(i);
-      newC = new Circle(oldC);
-      newC.halveVisibility();
-      target.add(newC);
+  public boolean equals(Object o) {
+    Candidate c = (Candidate)o;
+    if (this == c)
+      return true;
+    else if (this.fitness != c.fitness)
+      return false;
+    else {
+      Arrays.sort(this.shapes);
+      Arrays.sort(c.shapes);
+      for (int i = 0; i < NUM_SHAPES; i++)
+        if (! this.shapes[i].equals(c.shapes[i]))
+          return false;
+      return true;
     }
+  }
+  
+  public Candidate crossover(Candidate other) {
+    Circle[] combined = new Circle[NUM_SHAPES];
+    
+//    for (int i = 0; i < NUM_SHAPES; i++) {
+//      Candidate srcShapeList;
+//      if (randomEventOccursP(0.5))
+//        srcShapeList = this;
+//      else
+//        srcShapeList = other;
+//      combined[i] = getRandomElement(srcShapeList.shapes);
+//    }
+    for (int i = 0; i < NUM_SHAPES; i++)
+      combined[i] = this.shapes[i].crossover(other.shapes[i]);
+    
+    return new Candidate(this.target, combined);
   }
   
   // Modified to include target and fitness function
-  public float getFitness() {
-    if (this.fitnessStale) {
-      color[] myPixels = this.getCandidatePixels();
-      int deviation = 0;
-  
-      // Add linear differences to deviation
-      for (int i = 0; i < (width * height); i++) {
-        color myP = myPixels[i];
-        color tgP = this.target[i];
-      
-        int dRed = abs(getRed(myP) - getRed(tgP));
-        int dGreen = abs(getGreen(myP) - getGreen(tgP));
-        int dBlue = abs(getBlue(myP) - getBlue(tgP));
-      
-        deviation += (dRed + dGreen + dBlue);
-        /*
-          TODO: Ideas:
-           - root mean square color differences
-        */
-      }
-  
-      // Compute average deviation
-      float avg_deviation = (deviation + 0.0) / (width * height);
-      
-      // Cache the result
-      this.fitness = avg_deviation;
-      this.fitnessStale = false;
-    }
+  public void updateFitness() {
+    color[] myPixels = this.getCandidatePixels();
+    int deviation = 0;
+
+    // Add linear differences to deviation
+    for (int i = 0; i < myPixels.length; i++) {
+      color myP = myPixels[i];
+      color tgP = this.target[i];
     
-    return this.fitness;
+      int dRed = abs(getRed(myP) - getRed(tgP));
+      int dGreen = abs(getGreen(myP) - getGreen(tgP));
+      int dBlue = abs(getBlue(myP) - getBlue(tgP));
+    
+      deviation += (dRed + dGreen + dBlue);
+      /*
+        TODO: Ideas:
+         - root mean square color differences
+      */
+    }
+
+    // Compute average deviation
+    double avg_deviation = ((double)deviation) / (3 * 255 * this.target.length);
+    
+    // Cache the result
+    this.fitness = 1 - avg_deviation;
+  }
+  
+  
+
+  /*
+    ## Utilities ##############################################################
+  */
+  
+  Circle getRandomElement(Circle[] shapes) {
+    int mutationLocus = (int)random(0, this.shapes.length);
+    return shapes[mutationLocus];
+  }
+  
+  /**
+    Return true prob*100% of the time
+  */
+  boolean randomEventOccursP(float prob) {
+    return prob > random(0, 1);
   }
   
   //gets a single dimension array of colors referring to each pixel in the candidate
@@ -148,25 +143,15 @@ public class Candidate implements Comparable {
       buffer.background(this.backgroundColor);
     
     Circle c; // Place-holder for circles being looped through
-    for (int i = 0; i < this.shapes.size(); i++) {
-      c = this.shapes.get(i);
-      c.render(buffer);
-    }
+    for (int i = 0; i < NUM_SHAPES; i++)
+      this.shapes[i].render(buffer);
   }
   
   //compareTo makes it so that Candidates can be sorted based on fitness using Array.sort()
   public int compareTo(Object o) {
     Candidate other = (Candidate)o;
-    
-    float myFitness = this.getFitness();
-    float otherFitness = other.getFitness();
-    
-    if (abs(otherFitness - myFitness) < 0.001)
-      return 0;
-    else if (otherFitness > myFitness)
-      return -1;
-    else
-      return 1;
+    double myFitness = this.fitness;
+    double otherFitness = other.fitness;
+    return new Double(otherFitness).compareTo(myFitness);
   }
-  
 }

@@ -1,4 +1,4 @@
-class Circle {
+class Circle implements Comparable {
   public int radius;      //radius of the circle
   public int xPos, yPos;  //center point of the circle
   public int r, g, b, a;  //red, green, blue, and alpha values
@@ -19,7 +19,7 @@ class Circle {
   */
   public Circle(Circle c) {
     this.smallestRadius = 2;
-    this.largestRadius = width / 4;
+    this.largestRadius = width / 3;
 
     if (c != null) {
       this.xPos = c.xPos;
@@ -50,6 +50,18 @@ class Circle {
     this.a = a;
   }
   
+  public Circle crossover(Circle o) {
+    Circle cMid = new Circle(null);
+    cMid.xPos = (this.xPos + o.xPos) / 2;
+    cMid.yPos = (this.yPos + o.yPos) / 2;
+    cMid.radius = (this.radius + o.radius) / 2;
+    cMid.r = (this.r + o.r) / 2;
+    cMid.g = (this.g + o.g) / 2;
+    cMid.b = (this.b + o.b) / 2;
+    cMid.a = (this.a + o.a) / 2;
+    return cMid;
+  }
+  
   public void halveVisibility() {
     this.a = this.a / 2; // TODO: should this be * 2?
   }
@@ -76,6 +88,33 @@ class Circle {
       //draw the circle to the buffer
       buffer.ellipse(this.xPos, this.yPos, this.radius, this.radius);
     }
+  }
+  
+  public int compareTo(Object o) {
+    Circle c = (Circle)o;
+    int cXPos = new Integer(this.xPos).compareTo(c.xPos);
+    int cYPos = new Integer(this.yPos).compareTo(c.yPos);
+    int cRadius = new Integer(this.radius).compareTo(c.radius);
+    int cR = new Integer(this.r).compareTo(c.r);
+    int cG = new Integer(this.g).compareTo(c.g);
+    int cB = new Integer(this.b).compareTo(c.b);
+    int cA = new Integer(this.a).compareTo(c.a);
+    
+    if (cXPos != 0)
+      return cXPos;
+    else if (cYPos != 0)
+      return cYPos;
+    else if (cRadius != 0)
+      return cRadius;
+    else if (cR != 0)
+      return cR;
+    else if (cG != 0)
+      return cG;
+    else if (cB != 0)
+      return cB;
+    else
+      return cA;
+      
   }
   
 }
