@@ -12,7 +12,8 @@ final static int BREEDING_BETA = 20;
 
 // Variables used for storing the goal image
 static PImage goalImage;
-static String imagefilename = "quilt_daintytime_flickr.jpg";
+static int[] saves = { 1, 10, 50, 500, 2000 };
+static String imagefilename = "santacruz_elrentaplats_flickr.jpg";
 static color[] goalPixels;
 
 // Variables used in evolution
@@ -166,6 +167,12 @@ void advanceWorld() {
   */
   Candidate bestCandidate = curGenPop.get(0);
   bestCandidate.render(null); // Pass null to render to on-screen frame buffer
+  
+  saveFrame(String.format("output/%s_#####.png", imagefilename));
+//  for (int i = 0; i < saves.length; i++)
+//    if (currentGeneration == saves[i]) {
+//      save(String.format("output/evo%05d.png", currentGeneration));
+//    }
 }
 
 /*
