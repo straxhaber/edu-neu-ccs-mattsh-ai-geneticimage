@@ -12,8 +12,7 @@ final static int BREEDING_BETA = 20;
 
 // Variables used for storing the goal image
 static PImage goalImage;
-static int[] saves = { 1, 10, 50, 500, 2000 };
-static String imagefilename = "santacruz_elrentaplats_flickr.jpg";
+static String imagefilename = "fallcolors_ra_hurd_flickr.jpg";
 static color[] goalPixels;
 
 // Variables used in evolution
@@ -32,7 +31,7 @@ void setup() {
   //we want the image to be 100 pixels wide just to make it faster
   //the larger the goal image, the more expensive our fitness computation will be
   //(because we will have more pixels to compare)
-  goalImage.resize(100, 0); 
+  goalImage.resize(100, 0);
 
   //store the pixels in the goal image in goalPixels for use in calculating fitness
   goalPixels = goalImage.pixels;  
