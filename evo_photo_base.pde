@@ -168,7 +168,7 @@ void advanceWorld() {
   Candidate bestCandidate = curGenPop.get(0);
   bestCandidate.render(null); // Pass null to render to on-screen frame buffer
   
-  saveFrame(String.format("output/%s_#####.png", imagefilename));
+  saveFrame(String.format("output/v6/%s_#####.png", imagefilename));
 //  for (int i = 0; i < saves.length; i++)
 //    if (currentGeneration == saves[i]) {
 //      save(String.format("output/evo%05d.png", currentGeneration));
